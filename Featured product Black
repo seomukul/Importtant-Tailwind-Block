@@ -1,0 +1,57 @@
+<!-- Featured Collection Section -->
+<div class="bg-gray-50">
+    <div class="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
+        <div class="text-center mb-12">
+            <h2 class="text-3xl font-bold tracking-tight text-gray-900">FEATURED COLLECTION</h2>
+            <p class="mt-4 max-w-2xl mx-auto text-base text-gray-500">Check out our hand-picked selection of the latest and greatest sneakers.</p>
+        </div>
+
+        <div class="grid grid-cols-1 gap-y-10 gap-x-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            
+            {% for product in featured_products %}
+            <div class="group">
+                <div class="relative w-full overflow-hidden bg-gray-100 aspect-w-1 aspect-h-1 rounded-md">
+                    <a href="{% url 'products:product_detail' product.slug %}">
+                        {% if product.images.first.image.url %}
+                        <img src="{{ product.images.first.image.url }}" alt="{{ product.images.first.alt_text }}" class="h-full w-full object-cover object-center group-hover:opacity-75 transition-opacity duration-300">
+                        {% else %}
+                        <img src="https://placehold.co/400x400/e2e8f0/4a5568?text=No+Image" alt="Placeholder for {{ product.name }}" class="h-full w-full object-cover object-center">
+                        {% endif %}
+                    </a>
+                    {% if product.discount_percent > 0 %}
+                    <div class="absolute top-0 left-0 bg-brand-dark text-white text-xs font-bold px-3 py-1 m-2 rounded-sm">
+                        -{{ product.discount_percent }}%
+                    </div>
+                    {% endif %}
+                </div>
+                <div class="mt-4 text-center">
+                    <div class="mb-2 flex flex-wrap items-center justify-center gap-1">
+                        {% for variant in product.variants.all|slice:":4" %}
+                            <span class="text-xs text-gray-600 border rounded px-1.5 py-0.5">Size/{{ variant.size.value }}</span>
+                        {% endfor %}
+                    </div>
+                    <h3 class="text-sm font-medium text-gray-900">
+                        <a href="{% url 'products:product_detail' product.slug %}">
+                            {{ product.name }}
+                        </a>
+                    </h3>
+                    <div class="mt-1 flex items-center justify-center space-x-2">
+                        <p class="text-lg font-bold text-gray-900">৳{{ product.sale_price|floatformat:2 }}</p>
+                        <p class="text-sm text-gray-500 line-through">৳{{ product.original_price|floatformat:2 }}</p>
+                    </div>
+                </div>
+            </div>
+            {% empty %}
+            <p class="col-span-full text-center text-gray-500">No featured products to display at the moment.</p>
+            {% endfor %}
+
+        </div>
+        
+        <!-- Bottom Shop All Button -->
+        <div class="text-center mt-16">
+            <a href="{% url 'products:product_list' %}" class="inline-block border border-gray-800 text-gray-800 font-semibold py-2 px-6 hover:bg-gray-800 hover:text-white transition-colors duration-300">
+                Shop All
+            </a>
+        </div>
+    </div>
+</div>
