@@ -1,0 +1,211 @@
+{% extends "core/base.html" %}
+{% load static %}
+
+{% block title %}{{ product.name }} - Sneaker Store{% endblock %}
+
+{% block content %}
+<div class="bg-white py-8">
+    <div class="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8">
+        <!-- Main Product Section -->
+        <div class="flex flex-col lg:flex-row -mx-4">
+
+            <!-- Product Image Gallery -->
+            <div class="lg:w-1/2 px-4">
+                <div class="aspect-w-1 aspect-h-1 overflow-hidden rounded-lg mb-4 border border-gray-200 shadow-md">
+                    <img id="main-product-image" class="w-full h-full object-contain transition-all duration-300" src="{{ product.images.first.image.url|default:'https://via.placeholder.com/800x800.png?text=No+Image' }}" alt="{{ product.name }}">
+                </div>
+                <div class="flex space-x-3 overflow-x-auto pb-2">
+                    {% for image in product.images.all %}
+                    <img 
+                        class="h-20 w-20 object-cover rounded-lg border-2 border-gray-200 hover:border-red-500 cursor-pointer thumbnail-image shadow-sm"
+                        src="{{ image.image.url }}"
+                        alt="{{ image.alt_text|default:product.name }}"
+                        data-full="{{ image.image.url }}"
+                    >
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- Product Details & Actions -->
+            <div class="lg:w-1/2 px-4 mt-8 lg:mt-0">
+                <h2 class="text-3xl font-bold text-gray-800 mb-2">{{ product.name }}</h2>
+                <p class="text-gray-600 text-sm mb-4">
+                    Brand: <span class="font-semibold">{{ product.brand.name }}</span> |
+                    Model: <span id="product-model-code" class="font-semibold">{{ product.model_code }}</span>
+                </p>
+
+                <div class="flex items-baseline mb-4">
+                    <p class="text-2xl font-bold text-gray-800">৳{{ product.sale_price|floatformat:0 }}</p>
+                    {% if product.original_price %}
+                    <p class="text-lg text-gray-600 line-through ml-2">৳{{ product.original_price|floatformat:0 }}</p>
+                    {% endif %}
+                </div>
+
+                <form id="add-to-cart-form" action="{% url 'cart:add_to_cart' product.id %}" method="post">
+                    {% csrf_token %}
+                    
+                    <!-- Size Options -->
+                    <div class="mb-4">
+                        <label class="block text-gray-700 text-sm font-bold mb-2" for="size-options-container">* Size</label>
+                        <div class="flex flex-wrap gap-2" id="size-options-container">
+                            {% for size in available_sizes %}
+                            <div class="size-option-box w-16 h-10 flex items-center justify-center border border-gray-300 rounded-md cursor-pointer hover:border-red-500 text-sm font-medium" data-size-id="{{ size.id }}">
+                                {{ size.value }}
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+
+                    <!-- Color Options -->
+                    <div class="mb-4">
+                        <label class="block text-gray-700 text-sm font-bold mb-2" for="color-options-container">* Color</label>
+                        <div class="flex flex-wrap gap-2" id="color-options-container">
+                            {% for color in available_colors %}
+                            <div class="color-option-box w-20 h-10 flex items-center justify-center border border-gray-300 rounded-md cursor-pointer hover:border-red-500 text-sm font-medium" data-color-id="{{ color.id }}" data-image-url="{{ color.image_url }}">
+                                {{ color.name }}
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+
+                    <!-- Quantity -->
+                    <div class="mb-4">
+                        <label class="block text-gray-700 text-sm font-bold mb-2" for="quantity">Qty</label>
+                        <input type="number" id="quantity" name="quantity" class="shadow appearance-none border rounded w-20 py-2 px-3" value="1" min="1">
+                    </div>
+
+                    <!-- Action Buttons -->
+                    <div class="flex items-center gap-4 mt-6">
+                        <button type="submit" class="bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-6 rounded-md">Add to Cart</button>
+                        <button type="button" id="buy-now-btn" class="bg-gray-800 hover:bg-black text-white font-bold py-3 px-6 rounded-md">Buy It Now</button>
+                    </div>
+                </form>
+                
+                <!-- Wishlist Button Form -->
+                <form action="{% url 'interactions:add_to_wishlist' product.id %}" method="post" class="mt-4">
+                    {% csrf_token %}
+                    <button type="submit" class="w-full text-left text-red-600 hover:underline">
+                        <i class="fas fa-heart"></i> Add to Wishlist
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Description & Reviews Tabs -->
+        <div class="w-full mt-12">
+            <div class="border-b border-gray-200">
+                <nav class="-mb-px flex space-x-8" aria-label="Tabs">
+                    <button type="button" class="tab-button whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm" data-tab="description">Description</button>
+                    <button type="button" class="tab-button whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm" data-tab="reviews">Reviews ({{ product.reviews.count }})</button>
+                </nav>
+            </div>
+
+            <!-- Description Content -->
+            <div id="tab-content-description" class="tab-content mt-6">
+                <div class="prose max-w-none text-gray-600">{{ product.description|safe }}</div>
+            </div>
+
+            <!-- Reviews Content -->
+            <div id="tab-content-reviews" class="tab-content mt-6 hidden">
+                <h3 class="text-lg font-semibold text-gray-800 mb-4">Customer Reviews</h3>
+                {% for review in product.reviews.all %}
+                    <div class="border-b pb-4 mb-4">
+                        <p class="font-semibold">{{ review.user.username }} - <span class="text-yellow-500">{{ review.rating }} Stars</span></p>
+                        <p class="text-gray-600 mt-1">{{ review.comment }}</p>
+                        <p class="text-sm text-gray-400 mt-1">{{ review.created_at|date:"M d, Y" }}</p>
+                    </div>
+                {% empty %}
+                    <p class="text-gray-600">No reviews yet. Be the first to review this product!</p>
+                {% endfor %}
+
+                <!-- Add Review Form -->
+                <div class="mt-8">
+                    <h4 class="text-lg font-semibold text-gray-800 mb-2">Write a Review</h4>
+                    {% if user.is_authenticated %}
+                    <form action="{% url 'interactions:add_review' product.id %}" method="post">
+                        {% csrf_token %}
+                        <div class="mb-4">
+                            <label for="rating" class="block text-sm font-medium text-gray-700">Rating</label>
+                            <select id="rating" name="rating" class="mt-1 block w-full pl-3 pr-10 py-2 border-gray-300 rounded-md">
+                                <option value="5">5 Stars</option><option value="4">4 Stars</option><option value="3">3 Stars</option><option value="2">2 Stars</option><option value="1">1 Star</option>
+                            </select>
+                        </div>
+                        <div class="mb-4">
+                            <label for="comment" class="block text-sm font-medium text-gray-700">Comment</label>
+                            <textarea id="comment" name="comment" rows="4" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm"></textarea>
+                        </div>
+                        <button type="submit" class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded">Submit Review</button>
+                    </form>
+                    {% else %}
+                    <p>You must be <a href="{% url 'login' %}?next={{ request.path }}" class="text-red-600 hover:underline">logged in</a> to write a review.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block page_scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Tab switching logic
+    const tabButtons = document.querySelectorAll('.tab-button');
+    const tabContents = document.querySelectorAll('.tab-content');
+    tabButtons.forEach(button => {
+        button.addEventListener('click', () => {
+            const tab = button.dataset.tab;
+            tabButtons.forEach(btn => btn.classList.remove('border-red-500', 'text-red-600'));
+            button.classList.add('border-red-500', 'text-red-600');
+            tabContents.forEach(content => content.classList.add('hidden'));
+            document.getElementById(`tab-content-${tab}`).classList.remove('hidden');
+        });
+    });
+    if (tabButtons.length > 0) tabButtons[0].click();
+
+    // Image gallery logic
+    const mainImage = document.getElementById('main-product-image');
+    const thumbnails = document.querySelectorAll('.thumbnail-image');
+    thumbnails.forEach(thumb => {
+        thumb.addEventListener('click', function() {
+            mainImage.src = this.dataset.full;
+            thumbnails.forEach(t => t.classList.remove('border-red-500'));
+            this.classList.add('border-red-500');
+        });
+    });
+    if (thumbnails.length > 0) thumbnails[0].classList.add('border-red-500');
+    
+    // Variant selection logic
+    const sizeOptions = document.querySelectorAll('.size-option-box');
+    const colorOptions = document.querySelectorAll('.color-option-box');
+
+    sizeOptions.forEach(box => {
+        box.addEventListener('click', () => {
+            sizeOptions.forEach(opt => opt.classList.remove('border-red-500', 'bg-gray-200'));
+            box.classList.add('border-red-500', 'bg-gray-200');
+        });
+    });
+
+    colorOptions.forEach(box => {
+        box.addEventListener('click', () => {
+            colorOptions.forEach(opt => opt.classList.remove('border-red-500', 'bg-gray-200'));
+            box.classList.add('border-red-500', 'bg-gray-200');
+            const imageUrl = box.dataset.imageUrl;
+            if (imageUrl && imageUrl !== 'None') {
+                mainImage.src = imageUrl;
+            }
+        });
+    });
+    
+    // "Buy Now" button logic
+    const buyNowBtn = document.getElementById('buy-now-btn');
+    const cartForm = document.getElementById('add-to-cart-form');
+    buyNowBtn.addEventListener('click', () => {
+        // Here you would typically add to cart and then redirect to checkout
+        // For now, we'll just submit the form and let the view handle the redirect
+        // A more advanced implementation might change the form action or use JS to redirect
+        cartForm.submit(); 
+    });
+});
+</script>
+{% endblock %}
